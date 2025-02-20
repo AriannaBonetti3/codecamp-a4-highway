@@ -9,7 +9,7 @@ resp_file = data_folder / "resp_12_ms_TI_0.1.txt"
 wind_file = data_folder / "wind_12_ms_TI_0.1.txt"  
 
 # Load the response data
-t_resp, u_resp, xb_resp, xt_resp, headers_resp = codecamp.load_resp(resp_file, t_start=60)
+t_resp, u_resp, xb_resp, xt_resp = codecamp.load_resp(resp_file, t_start=60)
 
 # Print or inspect the loaded response data
 print("Response Data Loaded:")
@@ -19,7 +19,7 @@ print(f"Blade Displacement: {xb_resp[:5]} ...")
 print(f"Tower Displacement: {xt_resp[:5]} ...")
 
 # Load the wind data
-t_wind, u_wind , _ = codecamp.load_wind(wind_file, t_start = 100)
+t_wind, u_wind = codecamp.load_wind(wind_file, t_start = 100)
 
 # Print or inspect the loaded wind data
 print("\nWind Data Loaded:")

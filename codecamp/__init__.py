@@ -31,9 +31,9 @@ def load_resp(path_resp, t_start=60):
     
     mask = t >= t_start #Appluy time filtering
     
-    return t[mask], u[mask], xb[mask], xt[mask], headers #Return filtered data
+    return t[mask], u[mask], xb[mask], xt[mask] #Return filtered data
 
-def load_wind(path_wind, t_start=0):
+def load_wind(path_wind, t_start=100):
     """Loads the Turbie wind time series from a text file into NumPy arrays."""
     path_wind = Path(path_wind)
 
@@ -44,7 +44,7 @@ def load_wind(path_wind, t_start=0):
     
     t_wind, u_wind = data[:, 0], data[:, 1]
     mask = t_wind >= t_start
-    return t_wind[mask], u_wind[mask], headers
+    return t_wind[mask], u_wind[mask]
 
 
 # def example():
