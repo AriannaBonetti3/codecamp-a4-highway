@@ -78,7 +78,8 @@ The project consists of the following core components:
     - **wind_TI_** Stores turbulent wind time series data for 3 turbulence intensities (0.1, 0.05, 0.15).
     - **CT.txt**:  thrust coeff. curve
     - **turbie_parameters**: wind turbine parameters. 
-    - **test_week3.py** and **test_week4.py** are used to test the implementation of the functions in **`__init__.py`**
+-**`./CodeCamp`** contains **`__init__.py`**.
+- **`Diagrams.drawio`**: diagram of the code structure.
 
 
 ## Team contributions
