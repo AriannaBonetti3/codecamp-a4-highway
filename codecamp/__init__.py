@@ -5,6 +5,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import scipy as sp
 import scipy.integrate
+from multiprocessing import Pool
+import time
 
 
 def load_resp(path_resp, t_start=0):
@@ -133,37 +135,6 @@ def load_turbie_parameters(path_params):
     return parameters
 
 
-
-
-
-######### FANCY CODE FOR TURB PARAMETERS #######
-
-
-# def load_turbie_parameters(path_params):
-#     """Loads Turbie parameters dynamically from a text file into a dictionary."""
-#     path_params = Path(path_params)
-    
-#     parameters = {}
-#     with open(path_params, 'r') as file:
-#         for line in file:
-#             line = line.strip()
-#             if line.startswith('%') or not line:
-#                 continue  # Skip comments and empty lines
-            
-#             parts = line.split('%')  # Split value from comment
-#             if len(parts) < 2:
-#                 continue  # Skip lines without proper format
-            
-#             value = float(parts[0].strip())  # Extract and convert value
-#             name = parts[1].strip().split('[')[0].strip()  # Extract variable name
-            
-#             parameters[name] = value
-    
-#     return parameters
-
-######################################################
-
-
 def get_turbie_system_matrices(path_params):
     """
     Constructs and returns Turbie's mass, damping, and stiffness matrices.
@@ -236,27 +207,27 @@ def calculate_dydt(t, y, M, C, K, ct=None, rho=None, rotor_area=None, t_wind=Non
     """
     N = M.shape[0]  # Degrees of freedom
     
-    # Inverse of the mass matrix (for acceleration calculation)
+    # Inverse of the mass matrix 
     Minv = np.linalg.inv(M)
     
     # ---- Assemble matrix A (homogeneous part) ----
-    I = np.eye(N)  # Identity matrix
-    O = np.zeros((N, N))  # Zero matrix
-    A = np.block([[O, I], [-Minv @ K, -Minv @ C]])  # State-space matrix
+    I = np.eye(N)  
+    O = np.zeros((N, N)) 
+    A = np.block([[O, I], [-Minv @ K, -Minv @ C]]) 
     
     # ---- Define the forcing vector F (if aerodynamic forcing is present) ----
     F = np.zeros(N)  # Initialize forcing vector
     
     if ct is not None and rho is not None and rotor_area is not None and t_wind is not None and u_wind is not None:
         # If aerodynamic forcing is enabled, calculate it
-        x1_dot = y[2]  # The velocity of the blade (x1_dot)
+        x1_dot = y[2]  
         u = np.interp(t, t_wind, u_wind)  # Interpolate wind speed at time t
         faero = 0.5 * rho * rotor_area * ct * (u - x1_dot) * np.abs(u - x1_dot)  # Aerodynamic force
-        F[0] = faero  # Apply force to the first degree of freedom (blade)
+        F[0] = faero  
     
     # ---- Assemble array B (forcing term) ----
     B = np.zeros(2 * N)  # Initialize the array
-    B[N:] = Minv @ F  # Apply forcing effect to the acceleration part
+    B[N:] = Minv @ F  
     
     # ---- Compute dydt ----
     dydt = A @ y + B  # First-order differential system
@@ -287,21 +258,21 @@ def simulate_turbie(path_wind, path_parameters, path_Ct):
     params = load_turbie_parameters(path_parameters)  # Turbine parameters
 
     # Debugging: Check if data is loaded properly
-    print(f"Wind data loaded: {len(t_wind)} time steps")
-    print(f"Turbine parameters: {params}")
+    # print(f"Wind data loaded: {len(t_wind)} time steps")
+    # print(f"Turbine parameters: {params}")
 
     # Rotor area and aerodynamic coefficient calculation
     rotor_area = np.pi * (params['Dr'] / 2)**2  # Rotor area from diameter
     ct = calculate_ct(u_wind, path_Ct)  # Aerodynamic coefficient from Ct file
 
     # Debugging: Check rotor area and Ct coefficient
-    print(f"Rotor area: {rotor_area}, Ct coefficient: {ct}")
+    # print(f"Rotor area: {rotor_area}, Ct coefficient: {ct}")
 
     # Get turbine system matrices (M, C, K)
     M, C, K = get_turbie_system_matrices(path_parameters)
 
     # Debugging: Check system matrices
-    print(f"M matrix: {M.shape}, C matrix: {C.shape}, K matrix: {K.shape}")
+    # print(f"M matrix: {M.shape}, C matrix: {C.shape}, K matrix: {K.shape}")
 
     # Initial conditions: [0, 0, 0, 0] (displacement, velocity for blade and tower)
     y0 = [0, 0, 0, 0]
@@ -311,29 +282,29 @@ def simulate_turbie(path_wind, path_parameters, path_Ct):
     t_eval = np.arange(t0, tf + dt, dt)  # Ensure final time step is included
 
     # Debugging: Check the number of time steps
-    print(f"Time span for simulation: {t0} to {tf}, dt: {dt}")
-    print(f"Time points for evaluation: {t_eval[:5]}...")
+    # print(f"Time span for simulation: {t0} to {tf}, dt: {dt}")
+    # print(f"Time points for evaluation: {t_eval[:5]}...")
 
     # Solve the differential equation
-    args = (M, C, K, ct, params['rho'], rotor_area, t_wind, u_wind)  # Pass parameters
-    # Modify the solver call to refine accuracy
+    args = (M, C, K, ct, params['rho'], rotor_area, t_wind, u_wind)  
+    
     res = scipy.integrate.solve_ivp(calculate_dydt, [t0, tf], y0, t_eval=t_eval, args=args, rtol=1e-4, atol=1e-7)
 
 
     # Ensure the result is converted to numpy arrays
-    t = np.array(res.t)  # Time points as a numpy array
-    y = np.array(res.y)  # State variables as a numpy array
+    t = np.array(res.t)  
+    y = np.array(res.y)  
 
     # Debugging: Check if results are returned correctly
-    print(f"Shape of t: {t.shape}, Shape of y: {y.shape}")
+    # print(f"Shape of t: {t.shape}, Shape of y: {y.shape}")
 
     # Blade and tower displacements (ensure y has at least 2 rows)
-    if y.shape[0] >= 2:  # Ensure we have enough variables in the state vector
-        x_b = y[0, :] - y[1, :]  # Blade displacement (relative displacement)
-        x_t = y[1, :]  # Tower displacement
+    if y.shape[0] >= 2: 
+        x_b = y[0, :] - y[1, :] 
+        x_t = y[1, :]  
     else:
         print("Error: State vector does not contain the expected number of rows.")
-        x_b = np.zeros(t.shape)  # Return zeros in case of error
+        x_b = np.zeros(t.shape)  
         x_t = np.zeros(t.shape)
 
     # Interpolate wind speed to match the time points of the simulation
@@ -373,6 +344,122 @@ def save_resp(t, u, xb, xt, path_save):
     )
 
     print(f"Simulation results saved to {path_save}")
+
+
+
+def process_single_wind_file(wind_file, path_parameters, path_Ct):
+    """
+    Simulates the turbine response for a given wind file.
+    
+    Parameters:
+    - wind_file (Path): Path to the wind file.
+    - path_parameters (Path): Path to turbine parameters.
+    - path_Ct (Path): Path to Ct values.
+    
+    Returns:
+    - tuple: (mean wind speed, mean/std blade deflection, mean/std tower deflection)
+    """
+    t, u_wind, x_b, x_t = simulate_turbie(wind_file, path_parameters, path_Ct)
+    return np.mean(u_wind), np.mean(x_b), np.std(x_b), np.mean(x_t), np.std(x_t)
+
+def process_wind_files(data_folder, path_parameters, path_Ct):
+    """
+    Processes all wind files in the given folder using multiprocessing.
+    
+    Parameters:
+    - data_folder (Path): Folder containing wind simulation files.
+    - path_parameters (Path): Path to turbine parameters.
+    - path_Ct (Path): Path to Ct values.
+
+    Returns:
+    - np.array: Arrays of mean wind speeds, blade deflections, and tower deflections.
+    """
+    wind_files = sorted(data_folder.glob("*.txt"))
+
+    start_time = time.time()
+    
+    # Use multiprocessing to process files in parallel
+    with Pool() as pool:
+        results = pool.starmap(process_single_wind_file, [(wf, path_parameters, path_Ct) for wf in wind_files])
+
+    # Convert results into separate NumPy arrays
+    mean_wind_speeds, mean_deflections_blade, std_deflections_blade, mean_deflections_tower, std_deflections_tower = map(np.array, zip(*results))
+
+    end_time = time.time()
+    print(f"Processing time for one folder: {end_time - start_time:.2f} seconds")
+
+    return mean_wind_speeds, mean_deflections_blade, std_deflections_blade, mean_deflections_tower, std_deflections_tower
+
+def plot_results(mean_wind_speeds, mean_deflections_blade, std_deflections_blade, mean_deflections_tower, std_deflections_tower, title, show=False):
+    """
+    Plots the mean deflections of the blade and tower against wind speed with error bars.
+
+    Parameters:
+    - mean_wind_speeds (np.array): Mean wind speeds for each simulation.
+    - mean_deflections_blade (np.array): Mean blade deflections.
+    - std_deflections_blade (np.array): Standard deviation of blade deflections.
+    - mean_deflections_tower (np.array): Mean tower deflections.
+    - std_deflections_tower (np.array): Standard deviation of tower deflections.
+    - title (str): Title for the plot.
+    - show (bool): Whether to display the plot immediately.
+    """
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    for i in range(len(mean_wind_speeds)):
+        ax.errorbar(mean_wind_speeds[i], mean_deflections_blade[i], yerr=std_deflections_blade[i], 
+                    fmt='o', capsize=4, label='Blade Deflection' if i == 0 else "", 
+                    color='tab:blue', markersize=6)
+
+        ax.errorbar(mean_wind_speeds[i], mean_deflections_tower[i], yerr=std_deflections_tower[i], 
+                    fmt='s', capsize=4, label='Tower Deflection' if i == 0 else "", 
+                    color='tab:red', markersize=6)
+
+    ax.set_xlabel('Mean Wind Speed [m/s]', fontsize=12)
+    ax.set_ylabel('Deflection [m]', fontsize=12)
+    ax.set_title(title, fontsize=14)
+    ax.legend(fontsize=10)
+    ax.grid(True, linestyle='--', alpha=0.7)
+
+    plt.tight_layout()
+    
+    # Do not block execution unless explicitly requested
+    if show:
+        plt.show()
+
+def plot_combined_results(all_results, folders):
+    """
+    Plots the combined results of mean deflections of the blade and tower against wind speed with error bars for different turbulence intensities.
+    
+    Parameters:
+    - all_results (list): List of tuples containing mean wind speeds, blade deflections, and tower deflections for each folder.
+    - folders (list): List of folder names.
+    """
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    colors = ['tab:blue', 'tab:green', 'tab:orange']
+    markers = ['o', 's', '^']
+    labels = ['Blade Deflection', 'Tower Deflection']
+
+    for idx, (mean_wind_speeds, mean_deflections_blade, std_deflections_blade, mean_deflections_tower, std_deflections_tower) in enumerate(all_results):
+        for i in range(len(mean_wind_speeds)):
+            ax.errorbar(mean_wind_speeds[i], mean_deflections_blade[i], yerr=std_deflections_blade[i], 
+                        fmt=markers[0], capsize=4, label=f'{labels[0]} ({folders[idx].split("_")[-1]})' if i == 0 else "", 
+                        color=colors[idx], markersize=6)
+
+            ax.errorbar(mean_wind_speeds[i], mean_deflections_tower[i], yerr=std_deflections_tower[i], 
+                        fmt=markers[1], capsize=4, label=f'{labels[1]} ({folders[idx].split("_")[-1]})' if i == 0 else "", 
+                        color=colors[idx], markersize=6)
+
+    ax.set_xlabel('Mean Wind Speed [m/s]', fontsize=12)
+    ax.set_ylabel('Deflection [m]', fontsize=12)
+    ax.set_title('Combined Deflections vs Wind Speed for Different Turbulence Intensities', fontsize=14)
+    ax.legend(fontsize=10)
+    ax.grid(True, linestyle='--', alpha=0.7)
+
+    plt.tight_layout()
+    plt.show()
 
 
 # def example():

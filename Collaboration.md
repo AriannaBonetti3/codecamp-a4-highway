@@ -1,12 +1,11 @@
 # Collaboration Guidelines
 
 ## Homework Strategy
-Our team will approach the homework by dividing tasks among members based on expertise and workload. Each member will be responsible for specific sections and making sure that everybody understands. However, it is decided to try and work together when it's possible. This to make sure that everybody understands and is able to follow the workflow.
+Our team will approach the homework together to make sure that everybody is on the same page and understands the process.Therefore, it is decided to try and work together when it's possible.
 
 ## Branching Strategy
 - We will use a **main** branch as the stable version of our project.
-- Each team member will create feature branches off **main** for their assigned tasks, if needed, otherwise, only one branch will be created and we will work together on that.
-- Branch names will follow this format: `feature/task-name` (e.g., `feature/database-setup`).
+- Each team member will create feature branches off **main** for their assigned tasks, if needed.
 
 ## Code Review Process
 - Every pull request (PR) must be reviewed by at least one other team member before merging.
@@ -14,7 +13,7 @@ Our team will approach the homework by dividing tasks among members based on exp
 - Constructive feedback will be given through PR comments.
 
 ## Meeting Plan
-- Meetings will be held Tuesday morning in campus.
+- Meetings will be held Tuesday morning on campus.
 - A standing meeting schedule will be set to align with deadlines.
 - Additional meetings will be scheduled as needed.
 
