@@ -9,7 +9,7 @@ from multiprocessing import Pool
 import time
 
 
-def load_resp(path_resp, t_start=0):
+def load_resp(path_resp, t_start=60):
     """Loads the Turbie response from a text file into NumPy arrays.
     
     Args:
